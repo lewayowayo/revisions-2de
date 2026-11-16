@@ -1,0 +1,13 @@
+{
+  "name": "Révisions 2de",
+  "short_name": "Révisions",
+  "description": "SVT et physique-chimie de seconde : fiches, cartes, exercices corrigés, contrôles blancs",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3F2F8",
+  "theme_color": "#3B2FC9",
+  "lang": "fr",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
