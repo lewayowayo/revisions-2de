@@ -1,6 +1,6 @@
 // L'appli s'ouvre même sans réseau ; la progression est stockée sur le téléphone (localStorage).
-const CACHE = "rv2de-v1";
-const FILES = ["./", "./index.html", "./manifest.json", "./icon.svg", "./core.js?v=8", "./app.js?v=8", "./ch-svt-a3.js?v=8", "./ch-pc-c2.js?v=8"];
+const CACHE = "rv2de-v2";
+const FILES = ["./", "./index.html", "./manifest.json", "./icon.svg", "./core.js?v=9", "./app.js?v=9", "./ch-svt-a3.js?v=9", "./ch-pc-c2.js?v=9"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener("fetch", e => {

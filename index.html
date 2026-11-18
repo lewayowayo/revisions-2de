@@ -226,6 +226,10 @@ textarea{width:100%;min-height:140px;border-radius:14px;border:2px solid var(--l
 .xpfloat{position:fixed;left:50%;transform:translateX(-50%);font-weight:800;color:var(--ok);font-size:22px;z-index:50;pointer-events:none;animation:up 1s ease-out forwards}
 @keyframes up{from{opacity:1;margin-top:0}to{opacity:0;margin-top:-60px}}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:55}
+.acts{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;margin-top:8px}
+.acts button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:62px;border-radius:16px;background:var(--surface);border:1px solid var(--line);font-weight:700;font-size:14px}
+.acts .ic{font-size:20px;line-height:1}
+.acts .main.svt{background:var(--svt);color:#fff;border-color:transparent} .acts .main.pc{background:var(--pc);color:#fff;border-color:transparent}
 .goal{display:flex;gap:14px;align-items:center}
 .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .kpi>div{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;text-align:center}
@@ -244,15 +248,15 @@ textarea{width:100%;min-height:140px;border-radius:14px;border:2px solid var(--l
 <main id="view" class="wrap" aria-live="polite"></main>
 <nav class="tabs" aria-label="Navigation"><div class="in">
   <button class="tab" data-go="home"><span class="ic" aria-hidden="true">🏠</span>Accueil</button>
-  <button class="tab" data-go="daily"><span class="ic" aria-hidden="true">⚡</span>Du jour</button>
+  <button class="tab" data-go="fiches"><span class="ic" aria-hidden="true">📖</span>Fiches</button>
   <button class="tab" data-go="progress"><span class="ic" aria-hidden="true">📈</span>Progrès</button>
   <button class="tab" data-go="settings"><span class="ic" aria-hidden="true">⚙️</span>Réglages</button>
 </div></nav>
 <div id="toast" class="toast" role="status"></div>
 <canvas id="confetti" hidden></canvas>
-<script src="core.js?v=8"></script>
-<script src="ch-svt-a3.js?v=8"></script>
-<script src="ch-pc-c2.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="core.js?v=9"></script>
+<script src="ch-svt-a3.js?v=9"></script>
+<script src="ch-pc-c2.js?v=9"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

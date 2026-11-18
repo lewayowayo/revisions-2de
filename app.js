@@ -99,36 +99,53 @@ function go(name, arg) {
   screen = name; closeSheets();
   $$(".tab").forEach(t => t.classList.toggle("active", t.dataset.go === name || (name === "chapter" && t.dataset.go === "home")));
   window.scrollTo(0, 0);
-  ({ home: renderHome, chapter: renderChapter, daily: startDaily, progress: renderProgress, settings: renderSettings })[name](arg);
+  ({ home: renderHome, chapter: renderChapter, fiches: renderFiches, progress: renderProgress, settings: renderSettings })[name](arg);
 }
 $$(".tab").forEach(t => t.addEventListener("click", () => go(t.dataset.go)));
 
 /* ---------- accueil ---------- */
 function renderHome() {
   const st = streakNow(), n = todayN(), lv = level();
-  const weak = RV.chapters.flatMap(ch => activeSkills(ch).map(s => ({ s, c: sk(s.id), ch }))).filter(o => o.c.ko > 0 && o.c.lvl < 4).sort((a, b) => (a.c.lvl - b.c.lvl) || (b.c.lastKo - a.c.lastKo)).slice(0, 3);
-  const due = RV.chapters.flatMap(ch => activeSkills(ch).filter(isDue));
   V().innerHTML = `
 <div class="top"><h1>Salut ${esc(S.name)} 👋</h1><span class="pill" title="jours d'affilée">🔥 ${st}</span><span class="pill" title="points d'expérience">⭐ ${S.xp}</span></div>
 <p class="muted" style="margin-top:-6px">Niveau : <b>${LEVELS[lv]}</b></p>
-<div class="card goal" style="margin:14px 0">
+<div class="card goal" style="margin:14px 0 20px">
   ${ring(Math.min(100, Math.round(n / S.goal * 100)), 64, "var(--accent)", "var(--line)")}
   <div class="grow"><b>Objectif du jour : ${S.goal} questions</b><div class="small muted">${n >= S.goal ? "Objectif atteint, bravo ! Tu peux continuer." : `${n} faite${n > 1 ? "s" : ""}, encore ${S.goal - n}. Environ 10 minutes.`}</div></div>
 </div>
-<button class="btn block" data-act="daily" style="min-height:56px;font-size:17px">⚡ Parcours du jour${due.length ? ` · ${due.length} révision${due.length > 1 ? "s" : ""}` : ""}</button>
-<h2 style="margin:24px 0 10px">Mes chapitres</h2>
-<div class="stack">${RV.chapters.map(ch => { const ex = examInfo(ch), sub = RV.subjects[ch.subject]; return `
+<div class="stack">${RV.chapters.map(ch => { const ex = examInfo(ch), sub = RV.subjects[ch.subject]; const weak = activeSkills(ch).filter(s => { const c = sk(s.id); return c.ko > 0 && c.lvl < 4; }).length, due = activeSkills(ch).filter(isDue).length; return `
+  <section class="${ch.subject}c">
   <button class="chap ${ch.subject}" data-ch="${ch.id}">
     <span class="ring">${ring(chapterPct(ch))}</span>
     <div class="k">${sub.icon} ${sub.name} · ${ch.code}</div>
     <h2>${ch.title}</h2>
     <div class="meta"><span>${ex.days != null && ex.days >= 0 && ex.days <= 3 ? "⏰ " : "📅 "}${ex.txt}</span></div>
-  </button>`; }).join("")}</div>
-${weak.length ? `<h2 style="margin:24px 0 10px">À retravailler</h2>${weak.map(o => `<button class="skill ${o.ch.subject}c" data-skill="${o.s.id}"><div class="grow"><div class="nm">${o.s.name}</div><div class="sh">${RV.subjects[o.ch.subject].name} · ${o.c.ko} erreur${o.c.ko > 1 ? "s" : ""}</div></div><div class="lv">${dots(o.c.lvl)}</div></button>`).join("")}` : ""}
-<p class="xsmall muted center" style="margin-top:22px">Tout est enregistré sur ce téléphone. Fonctionne sans réseau une fois ajoutée à l'écran d'accueil.</p>`;
-  V().querySelector("[data-act=daily]").onclick = () => go("daily");
+  </button>
+  <div class="acts">
+    <button data-fiche="${ch.id}"><span class="ic">📖</span>Fiches</button>
+    <button data-rev="${ch.id}" class="main ${ch.subject}"><span class="ic">🎯</span>Réviser</button>
+    <button data-exam="${ch.id}"><span class="ic">📝</span>Contrôle blanc</button>
+  </div>
+  ${weak || due ? `<p class="xsmall muted" style="margin:6px 4px 0">${[weak ? `${weak} compétence${weak > 1 ? "s" : ""} à retravailler` : "", due ? `${due} révision${due > 1 ? "s" : ""} prévue${due > 1 ? "s" : ""}` : ""].filter(Boolean).join(" · ")} : « Réviser » s'en occupe en priorité.</p>` : ""}
+  </section>`; }).join("")}</div>
+<p class="xsmall muted center" style="margin-top:22px">Chaque matière a ses propres révisions. Tout est enregistré sur ce téléphone.</p>`;
   $$("[data-ch]").forEach(b => b.onclick = () => go("chapter", { id: b.dataset.ch }));
-  $$("[data-skill]").forEach(b => b.onclick = () => startSkill(b.dataset.skill));
+  $$("[data-fiche]").forEach(b => b.onclick = () => go("chapter", { id: b.dataset.fiche, tab: "cours" }));
+  $$("[data-exam]").forEach(b => b.onclick = () => go("chapter", { id: b.dataset.exam, tab: "exam" }));
+  $$("[data-rev]").forEach(b => b.onclick = () => { const ch = RV.chapter(b.dataset.rev); startSession({ mode: "train", title: "Révision " + RV.subjects[ch.subject].name, chapters: [ch], n: 15 }); });
+}
+
+/* ---------- fiches (toutes matières, chacune séparée) ---------- */
+function renderFiches() {
+  V().innerHTML = `<div class="top"><h1>Fiches de révision</h1></div>
+  <p class="small muted" style="margin-top:-6px">Choisis une fiche : elle s'ouvre directement, avec les exercices correspondants en dessous.</p>
+  ${RV.chapters.map(ch => { const sub = RV.subjects[ch.subject]; return `<div class="${ch.subject}c" style="margin-top:18px">
+    <div class="row" style="margin-bottom:8px"><span class="tag ${ch.subject}">${sub.icon} ${sub.name}</span><h3 class="grow">${ch.title}</h3></div>
+    ${ch.lesson.map(s => `<button class="skill" data-open="${ch.id}|${s.id}"><div class="grow"><div class="nm">${s.title}</div></div>${s.badge || ""}<span>›</span></button>`).join("")}
+    <div class="small muted" style="margin:12px 4px 6px;font-weight:700">🧭 Méthodes et pièges</div>
+    ${ch.methods.map(s => `<button class="skill" data-open="${ch.id}|${s.id}"><div class="grow"><div class="nm">${s.title}</div></div><span>›</span></button>`).join("")}
+  </div>`; }).join("")}`;
+  $$("[data-open]").forEach(b => b.onclick = () => { const [id, sec] = b.dataset.open.split("|"); go("chapter", { id, tab: "cours", open: sec }); });
 }
 
 /* ---------- chapitre ---------- */
@@ -139,19 +156,20 @@ function renderChapter(arg) {
   V().innerHTML = `<div class="${ch.subject}c">
 <div class="top"><button class="btn ghost sm" data-act="back" aria-label="Retour">←</button><div class="grow"><div class="small muted">${sub.icon} ${sub.name} · Chapitre ${ch.code}</div><h1 style="font-size:23px">${ch.title}</h1></div></div>
 <div class="row small"><span class="tag ${ch.subject}">${ex.txt}</span><span class="muted">Maîtrise ${chapterPct(ch)} %</span></div>
-<div class="seg" role="tablist">${[["cours", "📖 Cours"], ["cartes", "🃏 Cartes"], ["train", "🎯 Exos"], ["exam", "📝 Contrôle"]].map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" class="${k === tab ? "on" : ""}" data-tab="${k}">${l}</button>`).join("")}</div>
+<div class="seg" role="tablist">${[["cours", "📖 Fiches"], ["cartes", "🃏 Cartes"], ["train", "🎯 Exos"], ["exam", "📝 Contrôle"]].map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" class="${k === tab ? "on" : ""}" data-tab="${k}">${l}</button>`).join("")}</div>
 <div id="chbody"></div></div>`;
   V().querySelector("[data-act=back]").onclick = () => go("home");
   $$("[data-tab]").forEach(b => b.onclick = () => renderChapter({ id: ch.id, tab: b.dataset.tab }));
-  ({ cours: tabCours, cartes: tabCartes, train: tabTrain, exam: tabExam })[tab](ch, $("#chbody"));
+  ({ cours: tabCours, cartes: tabCartes, train: tabTrain, exam: tabExam })[tab](ch, $("#chbody"), arg.open);
 }
-function tabCours(ch, el) {
+function tabCours(ch, el, open) {
   const secHtml = (s, open) => `<details class="sec" id="sec-${s.id}" ${open ? "open" : ""}><summary>${s.title} ${s.badge || ""}</summary><div class="secbody tableX">${s.html()}
     ${ch.skills.filter(k => k.lesson === s.id).length ? `<div class="row wrapflex" style="margin-top:12px">${ch.skills.filter(k => k.lesson === s.id).map(k => `<button class="btn ghost sm" data-skill="${k.id}">🎯 ${k.name}</button>`).join("")}</div>` : ""}</div></details>`;
   el.innerHTML = `<p class="small muted">La fiche du cahier, réorganisée. Ouvre une partie, lis-la, puis entraîne-toi juste en dessous.</p>
-  ${ch.lesson.map((s, i) => secHtml(s, false)).join("")}
+  ${ch.lesson.map(s => secHtml(s, s.id === open)).join("")}
   <h2 style="margin:22px 0 10px">🧭 Méthodes et pièges</h2>
-  ${ch.methods.map(s => secHtml(s, false)).join("")}`;
+  ${ch.methods.map(s => secHtml(s, s.id === open)).join("")}`;
+  if (open) { const d = el.querySelector("#sec-" + open); if (d) setTimeout(() => { d.scrollIntoView({ block: "start" }); window.scrollBy(0, -70); }, 30); }
   el.querySelectorAll("[data-skill]").forEach(b => b.onclick = () => startSkill(b.dataset.skill));
 }
 function tabTrain(ch, el) {
